@@ -7,7 +7,6 @@ module.exports = app => {
   app.log("Yay, the app was loaded!");
 
   app.on("pull_request.labeled", async context => {
-    // console.log(context);
     const senderType = context.payload.sender.type;
     const labelName = context.payload.label.name;
 
@@ -18,23 +17,26 @@ module.exports = app => {
       return;
     }
 
-    const commentBody = `I see you added the ${labelName} label, I'll get this merged to the staging branch!`;
+    const commentBody = `I see you added the "${labelName}" label, I'll get this merged to the staging branch!`;
+    mergeBranchIntoStaging(context);
     return addComment(commentBody, context);
   });
 
   app.on(["issue_comment.created", "issue_comment.edited"], async context => {
     const message = context.payload.comment.body;
-    console.log(`Received this comment: ${message}`);
-
     if (message.match(/merge to stag((ing)|e)/i)) {
-      mergeBranchIntoStaging();
+      mergeBranchIntoStaging(context);
       addTag(context);
-      const commentBody = `I'll get this merged to the staging branch!`;
-      addComment(commentBody, context);
+      addComment("I'll get this merged to the staging branch!", context);
     }
   });
 
-  function mergeBranchIntoStaging() {}
+  async function mergeBranchIntoStaging(context) {
+    const prDetails = await context.github.pulls.get(context.issue());
+    const prBranch = prDetails.data.head.ref;
+    const mergePayload = context.repo({ base: "staging", head: prBranch });
+    context.github.repos.merge(mergePayload);
+  }
 
   function addTag(context) {
     const addLabelPayload = context.issue({ labels: ["On Staging"] });
