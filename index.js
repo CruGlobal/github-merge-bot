@@ -3,7 +3,7 @@
  * @param {import('probot').Application} app
  */
 module.exports = app => {
-  const STAGING_LABEL = "On Staging"
+  const STAGING_LABEL = "On Staging";
 
   // Your code here
   app.log("Yay, the app was loaded!");
@@ -40,10 +40,10 @@ module.exports = app => {
   });
 
   async function pullRequestHasTag(context) {
-    const labels = await context.github.issues.listLabelsOnIssue(
+    const { data: labels } = await context.github.issues.listLabelsOnIssue(
       context.issue()
     );
-    for (const l of labels.data) {
+    for (const l of labels) {
       if (l.name == STAGING_LABEL) {
         return true;
       }
@@ -51,10 +51,14 @@ module.exports = app => {
   }
 
   async function mergeBranchIntoStaging(context) {
-    const prDetails = await context.github.pulls.get(context.issue());
-    const prBranch = prDetails.data.head.ref;
-    const mergePayload = context.repo({ base: "staging", head: prBranch });
-    context.github.repos.merge(mergePayload);
+    const { data: prDetails } = await context.github.pulls.get(context.issue());
+    const mergePayload = context.repo({
+      base: "staging",
+      head: prDetails.head.ref
+    });
+    context.github.repos.merge(mergePayload).catch(error => {
+      mergeError(error, context);
+    });
   }
 
   function addTag(context) {
@@ -65,6 +69,17 @@ module.exports = app => {
   function addComment(message, context) {
     const pullRequestComment = context.issue({ body: message });
     return context.github.issues.createComment(pullRequestComment);
+  }
+
+  function mergeError(error, context) {
+    if (error.message == "Merge conflict") {
+      addComment(
+        "Merge conflict attempting to merge this into staging. Please fix manually.",
+        context
+      );
+    } else {
+      console.log(error);
+    }
   }
 
   // For more information on building apps:
