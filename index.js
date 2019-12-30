@@ -3,6 +3,8 @@
  * @param {import('probot').Application} app
  */
 module.exports = app => {
+  const STAGING_LABEL = "On Staging"
+
   // Your code here
   app.log("Yay, the app was loaded!");
 
@@ -13,7 +15,7 @@ module.exports = app => {
     if (senderType == "Bot") {
       return;
     }
-    if (labelName != "On Staging") {
+    if (labelName != STAGING_LABEL) {
       return;
     }
 
@@ -31,6 +33,23 @@ module.exports = app => {
     }
   });
 
+  app.on("pull_request.synchronize", async context => {
+    if (await pullRequestHasTag(context)) {
+      mergeBranchIntoStaging(context);
+    }
+  });
+
+  async function pullRequestHasTag(context) {
+    const labels = await context.github.issues.listLabelsOnIssue(
+      context.issue()
+    );
+    for (const l of labels.data) {
+      if (l.name == STAGING_LABEL) {
+        return true;
+      }
+    }
+  }
+
   async function mergeBranchIntoStaging(context) {
     const prDetails = await context.github.pulls.get(context.issue());
     const prBranch = prDetails.data.head.ref;
@@ -39,7 +58,7 @@ module.exports = app => {
   }
 
   function addTag(context) {
-    const addLabelPayload = context.issue({ labels: ["On Staging"] });
+    const addLabelPayload = context.issue({ labels: [STAGING_LABEL] });
     context.github.issues.addLabels(addLabelPayload);
   }
 
