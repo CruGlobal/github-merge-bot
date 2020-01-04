@@ -1,46 +1,67 @@
 module.exports = app => {
-  const STAGING_LABEL = "On Staging";
+  const defaultConfig = {
+    enabled: false,
+    label_name: "On Staging",
+    comment: true
+  };
 
   app.log("Yay, the app was loaded!");
 
   app.on("pull_request.labeled", async context => {
     const senderType = context.payload.sender.type;
+    if (senderType == "Bot") return;
+
     const labelName = context.payload.label.name;
-
-    if (senderType == "Bot") {
+    const config = await loadConfig(context);
+    if (labelName != config.label_name) return;
+    if (!config.enabled) {
+      app.log("Label added, but no action taken because config is disabled.")
       return;
     }
-    if (labelName != STAGING_LABEL) {
-      return;
-    }
 
-    const commentBody = `I see you added the "${labelName}" label, I'll get this merged to the staging branch!`;
     mergeBranchIntoStaging(context);
-    return addComment(commentBody, context);
+    if (config.comment) {
+      const commentBody = `I see you added the "${config.label_name}" label, I'll get this merged to the staging branch!`;
+      addComment(commentBody, context);
+    }
   });
 
   app.on(["issue_comment.created", "issue_comment.edited"], async context => {
     const message = context.payload.comment.body;
     if (message.match(/merge to stag((ing)|e)/i)) {
+      const config = await loadConfig(context);
+
+      if (!config.enabled) {
+        app.log("Comment observed, but no action taken because config is disabled.")
+        app.log(message)
+        return;
+      }
+
       mergeBranchIntoStaging(context);
-      addTag(context);
-      addComment("I'll get this merged to the staging branch!", context);
+      addLabel(context, config.label_name);
+      if (config.comment)
+        addComment("I'll get this merged to the staging branch!", context);
     }
   });
 
   app.on("pull_request.synchronize", async context => {
-    debugger;
-    if (await pullRequestHasTag(context)) {
+    const config = await loadConfig(context);
+    if (!config.enabled) return;
+    if (await pullRequestHasLabel(context, config.label_name)) {
       mergeBranchIntoStaging(context);
     }
   });
 
-  async function pullRequestHasTag(context) {
+  async function loadConfig(context) {
+    return await context.config("merge-bot.yml", defaultConfig);
+  }
+
+  async function pullRequestHasLabel(context, labelName) {
     const { data: labels } = await context.github.issues.listLabelsOnIssue(
       context.issue()
     );
     for (const l of labels) {
-      if (l.name == STAGING_LABEL) {
+      if (l.name == labelName) {
         return true;
       }
     }
@@ -57,8 +78,8 @@ module.exports = app => {
     });
   }
 
-  function addTag(context) {
-    const addLabelPayload = context.issue({ labels: [STAGING_LABEL] });
+  function addLabel(context, labelName) {
+    const addLabelPayload = context.issue({ labels: [labelName] });
     context.github.issues.addLabels(addLabelPayload);
   }
 
