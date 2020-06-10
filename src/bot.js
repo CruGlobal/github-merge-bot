@@ -1,9 +1,15 @@
+'use strict'
+
+// import rollbar from '../config/rollbar'
+
 module.exports = app => {
   const defaultConfig = {
     enabled: false,
     label_name: "On Staging",
     comment: true
   };
+
+  // app.router.use(rollbar.errorHandler())
 
   app.log("Yay, the app was loaded!");
 
