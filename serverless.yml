@@ -20,7 +20,7 @@ provider:
 
 functions:
   mergebot:
-    handler: src/handlers.handler
+    handler: src/handlers.probot
     memorySize: 256
     timeout: 60
     events:
