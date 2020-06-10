@@ -1,6 +1,6 @@
 'use strict'
 
-const { rollbar } = require('../config/rollbar.js');
+const { rollbar } = require('../config/rollbar.js')
 
 module.exports = app => {
   const defaultConfig = {
