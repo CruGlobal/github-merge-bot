@@ -5,7 +5,7 @@ const RollbarSourceMapPlugin = require('rollbar-sourcemap-webpack-plugin')
 const sourcemapVersion = require('child_process').execSync('git rev-parse --short HEAD').toString().trim()
 
 module.exports = {
-  entry: './src/handlers.js',
+  entry: slsw.lib.entries,
   target: 'node',
   devtool: 'source-map',
   externals: [nodeExternals()],
