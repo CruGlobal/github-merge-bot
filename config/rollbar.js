@@ -1,6 +1,6 @@
 'use strict'
 
-import Rollbar from 'rollbar'
+const Rollbar = require('rollbar');
 
 const rollbar = new Rollbar({
   // https://rollbar.com/docs/notifier/rollbar.js/#configuration-reference
@@ -19,6 +19,4 @@ const rollbar = new Rollbar({
   }
 })
 
-export default {
-  error: (...args) => new Promise(resolve => rollbar.error(...args, resolve))
-}
+module.exports = { rollbar: rollbar }
