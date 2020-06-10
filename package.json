@@ -33,6 +33,7 @@
     "nodemon": "^2.0.0",
     "rollbar-sourcemap-webpack-plugin": "^2.5.1",
     "serverless": "^1.44.1",
+    "serverless-offline": "^6.4.0",
     "serverless-webpack": "^5.3.1",
     "smee-client": "^1.1.0",
     "standard": "^14.3.1",

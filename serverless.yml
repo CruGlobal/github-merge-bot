@@ -38,6 +38,7 @@ package:
 
 plugins:
   - serverless-webpack
+  - serverless-offline
 
 custom:
   webpack:
@@ -50,3 +51,5 @@ custom:
     staging: stage
     development: dev
     lab: lab
+  serverless-offline:
+    httpPort: 4000

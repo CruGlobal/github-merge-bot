@@ -6,4 +6,12 @@ npm-debug.log
 package-lock.json
 coverage
 
+# Serverless directories
+.serverless
 dist
+
+# Jenkins deployment work directory
+.deployment
+
+# Webpack
+.webpack
