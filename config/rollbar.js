@@ -1,6 +1,6 @@
 'use strict'
 
-const Rollbar = require('rollbar');
+const Rollbar = require('rollbar')
 
 const rollbar = new Rollbar({
   // https://rollbar.com/docs/notifier/rollbar.js/#configuration-reference
