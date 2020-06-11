@@ -11,19 +11,19 @@ module.exports = app => {
 
   app.router.use(rollbar.errorHandler())
 
-  app.log('Yay, the app was loaded!')
+  app.log.info('Yay, the app was loaded!')
 
   app.on('pull_request.labeled', async context => {
     const senderType = context.payload.sender.type
-    app.log(`New label added by a ${senderType}`)
+    app.log.debug(`New label added by a ${senderType}`)
     if (senderType === 'Bot') return
 
     const labelName = context.payload.label.name
     const config = await loadConfig(context)
-    app.log(`New label: ${config.label_name}, Looking for ${labelName}`)
+    app.log.debug(`New label: ${config.label_name}, Looking for ${labelName}`)
     if (labelName !== config.label_name) return
     if (!config.enabled) {
-      app.log('Label added, but no action taken because config is disabled.')
+      app.log.info('Label added, but no action taken because config is disabled.')
       return
     }
 
@@ -32,7 +32,7 @@ module.exports = app => {
       const commentBody = `I see you added the "${config.label_name}" label, I'll get this merged to the staging branch!`
       await addComment(commentBody, context)
     }
-    app.log('merged and commented')
+    app.log.debug('merged and commented')
   })
 
   app.on(['issue_comment.created', 'issue_comment.edited'], async context => {
@@ -41,8 +41,7 @@ module.exports = app => {
       const config = await loadConfig(context)
 
       if (!config.enabled) {
-        app.log('Comment observed, but no action taken because config is disabled.')
-        app.log(message)
+        app.log.info('Comment observed, but no action taken because config is disabled.')
         return
       }
 
@@ -76,7 +75,7 @@ module.exports = app => {
   }
 
   async function mergeBranchIntoStaging (context) {
-    app.log('attempting to merge branch into staging')
+    app.log.debug('attempting to merge branch into staging')
     const { data: prDetails } = await context.github.pulls.get(context.issue())
     const mergePayload = context.repo({
       base: 'staging',
@@ -93,11 +92,11 @@ module.exports = app => {
   }
 
   async function addComment (message, context) {
-    app.log(`attempting to add comment: ${message}`)
+    app.log.debug(`attempting to add comment: ${message}`)
     const pullRequestComment = context.issue({ body: message })
     const { data: result } = await context.github.issues.createComment(pullRequestComment)
-      .catch(error => { app.log(`error posting comment: ${error}`) })
-    app.log(`comment creation result: ${result.url}`)
+      .catch(error => { app.log.error(`error posting comment: ${error}`) })
+    app.log.debug(`comment creation result: ${result.url}`)
     return result
   }
 
@@ -108,7 +107,7 @@ module.exports = app => {
         context
       )
     } else {
-      app.log(`issue merging branch: ${error}`)
+      app.log.error(`issue merging branch: ${error}`)
     }
   }
 }
