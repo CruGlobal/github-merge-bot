@@ -48,6 +48,7 @@ module.exports = app => {
       mergeBranchIntoStaging(context)
       addLabel(context, config.label_name)
       if (config.comment) { await addComment("I'll get this merged to the staging branch!", context) }
+      app.log('merged and commented')
     }
   })
 
@@ -60,7 +61,7 @@ module.exports = app => {
   })
 
   async function loadConfig (context) {
-    return await context.config('merge-bot.yml', defaultConfig)
+    return context.config('merge-bot.yml', defaultConfig)
   }
 
   async function pullRequestHasLabel (context, labelName) {
@@ -81,7 +82,7 @@ module.exports = app => {
       base: 'staging',
       head: prDetails.head.ref
     })
-    context.github.repos.merge(mergePayload).catch(async error => {
+    await context.github.repos.merge(mergePayload).catch(async error => {
       await mergeError(error, context)
     })
   }
@@ -95,6 +96,7 @@ module.exports = app => {
     app.log(`attempting to add comment: ${message}`)
     const pullRequestComment = context.issue({ body: message })
     const { data: result } = await context.github.issues.createComment(pullRequestComment)
+      .catch(error => { app.log(`error posting comment: ${error}`) })
     app.log(`comment creation result: ${result.url}`)
     return result
   }
