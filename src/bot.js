@@ -15,10 +15,12 @@ module.exports = app => {
 
   app.on('pull_request.labeled', async context => {
     const senderType = context.payload.sender.type
+    app.log(`New label added by a ${senderType}`)
     if (senderType === 'Bot') return
 
     const labelName = context.payload.label.name
     const config = await loadConfig(context)
+    app.log(`New label: ${config.label_name}, Looking for ${labelName}`)
     if (labelName !== config.label_name) return
     if (!config.enabled) {
       app.log('Label added, but no action taken because config is disabled.')
@@ -73,6 +75,7 @@ module.exports = app => {
   }
 
   async function mergeBranchIntoStaging (context) {
+    app.log('attempting to merge branch into staging')
     const { data: prDetails } = await context.github.pulls.get(context.issue())
     const mergePayload = context.repo({
       base: 'staging',
@@ -89,6 +92,7 @@ module.exports = app => {
   }
 
   function addComment (message, context) {
+    app.log(`attempting to add comment: ${message}`)
     const pullRequestComment = context.issue({ body: message })
     return context.github.issues.createComment(pullRequestComment)
   }
