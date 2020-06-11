@@ -21,7 +21,7 @@ provider:
 functions:
   mergebot:
     handler: src/handlers.probot
-    memorySize: 256
+    memorySize: 192
     timeout: 60
     events:
       - http:
