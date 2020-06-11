@@ -47,7 +47,7 @@ module.exports = app => {
 
       mergeBranchIntoStaging(context)
       addLabel(context, config.label_name)
-      if (config.comment) { addComment("I'll get this merged to the staging branch!", context) }
+      if (config.comment) { await addComment("I'll get this merged to the staging branch!", context) }
     }
   })
 
@@ -81,8 +81,8 @@ module.exports = app => {
       base: 'staging',
       head: prDetails.head.ref
     })
-    context.github.repos.merge(mergePayload).catch(error => {
-      mergeError(error, context)
+    context.github.repos.merge(mergePayload).catch(async error => {
+      await mergeError(error, context)
     })
   }
 
@@ -91,20 +91,22 @@ module.exports = app => {
     context.github.issues.addLabels(addLabelPayload)
   }
 
-  function addComment (message, context) {
+  async function addComment (message, context) {
     app.log(`attempting to add comment: ${message}`)
     const pullRequestComment = context.issue({ body: message })
-    return context.github.issues.createComment(pullRequestComment)
+    const { data: result } = await context.github.issues.createComment(pullRequestComment)
+    app.log(`comment creation result: ${result.url}`)
+    return result
   }
 
-  function mergeError (error, context) {
+  async function mergeError (error, context) {
     if (error.message === 'Merge conflict') {
-      addComment(
+      await addComment(
         'Merge conflict attempting to merge this into staging. Please fix manually.',
         context
       )
     } else {
-      app.log(error)
+      app.log(`issue merging branch: ${error}`)
     }
   }
 }
