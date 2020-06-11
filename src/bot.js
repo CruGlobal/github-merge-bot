@@ -27,11 +27,12 @@ module.exports = app => {
       return
     }
 
-    mergeBranchIntoStaging(context)
+    await mergeBranchIntoStaging(context)
     if (config.comment) {
       const commentBody = `I see you added the "${config.label_name}" label, I'll get this merged to the staging branch!`
-      addComment(commentBody, context)
+      await addComment(commentBody, context)
     }
+    app.log('merged and commented')
   })
 
   app.on(['issue_comment.created', 'issue_comment.edited'], async context => {
@@ -45,10 +46,9 @@ module.exports = app => {
         return
       }
 
-      mergeBranchIntoStaging(context)
-      addLabel(context, config.label_name)
+      await mergeBranchIntoStaging(context)
+      await addLabel(context, config.label_name)
       if (config.comment) { await addComment("I'll get this merged to the staging branch!", context) }
-      app.log('merged and commented')
     }
   })
 
@@ -56,7 +56,7 @@ module.exports = app => {
     const config = await loadConfig(context)
     if (!config.enabled) return
     if (await pullRequestHasLabel(context, config.label_name)) {
-      mergeBranchIntoStaging(context)
+      await mergeBranchIntoStaging(context)
     }
   })
 
@@ -87,9 +87,9 @@ module.exports = app => {
     })
   }
 
-  function addLabel (context, labelName) {
+  async function addLabel (context, labelName) {
     const addLabelPayload = context.issue({ labels: [labelName] })
-    context.github.issues.addLabels(addLabelPayload)
+    return context.github.issues.addLabels(addLabelPayload)
   }
 
   async function addComment (message, context) {
