@@ -37,7 +37,7 @@ module.exports = app => {
 
   app.on(['issue_comment.created', 'issue_comment.edited'], async context => {
     const message = context.payload.comment.body
-    if (message.match(/merge to stag((ing)|e)/i)) {
+    if (message.match(/^merge to stag((ing)|e)$/i)) {
       const config = await loadConfig(context)
 
       if (!config.enabled) {
