@@ -1,6 +1,6 @@
 'use strict'
 
-const { rollbar } = require('../config/rollbar.js')
+// const { rollbar } = require('../config/rollbar.js')
 
 module.exports = app => {
   const defaultConfig = {
@@ -9,7 +9,7 @@ module.exports = app => {
     comment: true
   }
 
-  app.router.use(rollbar.errorHandler())
+  // app.router.use(rollbar.errorHandler())
 
   app.log.info('Yay, the app was loaded!')
 

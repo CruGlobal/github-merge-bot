@@ -1,6 +1,6 @@
 const nock = require('nock')
 // Requiring our app implementation
-const myProbotApp = require('..')
+const myProbotApp = require('../src/bot.js')
 const { Probot } = require('probot')
 // Requiring our fixtures
 const payload = require('./fixtures/issues.opened')
