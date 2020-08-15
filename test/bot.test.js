@@ -8,6 +8,8 @@ const issueCreatedBody = { body: "I see you added the \"On Staging\" label, I'll
 const fs = require('fs')
 const path = require('path')
 
+nock.disableNetConnect()
+
 describe('Staging Merger Bot', () => {
   let probot
   let mockCert
@@ -21,7 +23,6 @@ describe('Staging Merger Bot', () => {
   })
 
   beforeEach(() => {
-    nock.disableNetConnect()
     probot = new Probot({ id: 123, cert: mockCert })
     // Load our app into probot
     probot.load(myProbotApp)
@@ -34,7 +35,7 @@ describe('Staging Merger Bot', () => {
       .reply(200, { token: 'test' })
 
     // Test that a comment is posted
-    nock('https://api.github.com')
+    const commentMock = nock('https://api.github.com')
       .post('/repos/soberstadt/test-merge-repo/issues/2/comments', (body) => {
         expect(body).toMatchObject(issueCreatedBody)
         return true
@@ -52,17 +53,19 @@ describe('Staging Merger Bot', () => {
       .reply(200, { head: { ref: 'asdf1234' } })
 
     // Test that a merge is posted
-    nock('https://api.github.com')
+    const mergeMock = nock('https://api.github.com')
       .post('/repos/soberstadt/test-merge-repo/merges')
       .reply(200)
 
     // Receive a webhook event
     await probot.receive({ name: 'pull_request', payload })
+
+    expect(commentMock.isDone())
+    expect(mergeMock.isDone())
   })
 
   afterEach(() => {
     nock.cleanAll()
-    nock.enableNetConnect()
   })
 })
 
