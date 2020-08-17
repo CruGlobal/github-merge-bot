@@ -98,7 +98,6 @@ describe('Staging Merger Bot', () => {
 
       mergeMock = nock('https://api.github.com')
         .post('/repos/soberstadt/test-merge-repo/merges', (body) => {
-          console.log(body)
           expect(body).toMatchObject(mergeBody)
           return true
         })
