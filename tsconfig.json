@@ -69,6 +69,6 @@
     "pretty": false,
     "skipLibCheck": true
   },
-  "include": ["src/bot.ts"],
+  "include": ["src/*.ts"],
   "compileOnSave": false
 }
