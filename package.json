@@ -19,7 +19,7 @@
     "jest": "jest --detectOpenHandles",
     "test": "tsc && jest && standard",
     "test:watch": "jest --watch --notify --notifyMode=change --coverage",
-    "build": "webpack",
+    "build": "serverless webpack",
     "build:ts": "tsc",
     "build:watch": "tsc && (tsc -w --preserveWatchOutput & nodemon)"
   },
