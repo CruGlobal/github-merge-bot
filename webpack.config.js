@@ -13,21 +13,6 @@ module.exports = {
   performance: {
     hints: false
   },
-  resolve: {
-    extensions: ['.js', '.jsx', '.ts', '.tsx']
-  },
-  module: {
-    rules: [
-      {
-        // Include ts, tsx, js, and jsx files.
-        test: /\.(ts|js)x?$/,
-        exclude: /node_modules/,
-        use: [
-          'babel-loader'
-        ]
-      }
-    ]
-  },
   plugins: [
     new webpack.EnvironmentPlugin({
       SOURCEMAP_VERSION: sourcemapVersion
