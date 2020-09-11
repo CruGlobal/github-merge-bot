@@ -9,7 +9,7 @@ interface Config {
   comment: boolean
 }
 
-module.exports = (app: Application) => {
+export = (app: Application) => {
   const defaultConfig = {
     enabled: false,
     label_name: 'On Staging',
