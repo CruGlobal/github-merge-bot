@@ -6,14 +6,16 @@ import Webhooks from '@octokit/webhooks'
 interface Config {
   enabled: boolean,
   label_name: string,
-  comment: boolean
+  comment: boolean,
+  watch_default_branch: boolean
 }
 
 export const MergerBot: ApplicationFunction = (app: Application) => {
   const defaultConfig = {
     enabled: false,
     label_name: 'On Staging',
-    comment: true
+    comment: true,
+    watch_default_branch: false
   }
 
   // app.router.use(rollbar.errorHandler())
@@ -35,7 +37,7 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
       return
     }
 
-    await mergeBranchIntoStaging(context)
+    await mergePRIntoStaging(context)
     if (config.comment) {
       const commentBody = `I see you added the "${config.label_name}" label, I'll get this merged to the staging branch!`
       await addComment(commentBody, context)
@@ -53,7 +55,7 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
         return
       }
 
-      await mergeBranchIntoStaging(context)
+      await mergePRIntoStaging(context)
       await addLabel(context, config.label_name)
       if (config.comment) { await addComment("I'll get this merged to the staging branch!", context) }
     }
@@ -63,8 +65,16 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
     const config = (await loadConfig(context)) as Config
     if (!config.enabled) return
     if (await pullRequestHasLabel(context, config.label_name)) {
-      await mergeBranchIntoStaging(context)
+      await mergePRIntoStaging(context)
     }
+  })
+
+  app.on('push', async context => {
+    const config = (await loadConfig(context)) as Config
+    if (!config.enabled || !config.watch_default_branch) return
+    const defaultBranch = context.payload.repository.default_branch
+    if (context.payload.ref !== `refs/${defaultBranch}`) return
+    await mergeIntoStaging(context, 'master')
   })
 
   async function loadConfig(context: Context) {
@@ -83,12 +93,16 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
     return false
   }
 
-  async function mergeBranchIntoStaging(context: Context) {
-    app.log.debug('attempting to merge branch into staging')
+  async function mergePRIntoStaging (context: Context) {
+    app.log.debug('attempting to merge PR into staging')
     const { data: prDetails } = await context.github.pulls.get(context.issue())
+    await mergeIntoStaging(context, prDetails.head.ref)
+  }
+
+  async function mergeIntoStaging (context: Context, head: string) {
     const mergePayload = context.repo({
       base: 'staging',
-      head: prDetails.head.ref
+      head: head
     })
     await context.github.repos.merge(mergePayload).catch(async error => {
       await mergeError(error, context)
