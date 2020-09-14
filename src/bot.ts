@@ -74,7 +74,8 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
     if (!config.enabled || !config.watch_default_branch) return
     const defaultBranch = context.payload.repository.default_branch
     if (context.payload.ref !== `refs/${defaultBranch}`) return
-    await mergeIntoStaging(context, 'master')
+    app.log.debug(`attempting to merge ${defaultBranch} into staging`)
+    await mergeIntoStaging(context, defaultBranch)
   })
 
   async function loadConfig(context: Context) {

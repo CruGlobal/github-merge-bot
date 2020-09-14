@@ -129,7 +129,7 @@ describe('Staging Merger Bot', () => {
         .post('/repos/soberstadt/test-merge-repo/merges', (body) => {
           expect(body).toMatchObject({
             base: 'staging',
-            head: 'master'
+            head: 'main'
           })
           return true
         })
@@ -140,6 +140,15 @@ describe('Staging Merger Bot', () => {
       await probot.receive({ name: 'push', payload: pushPayload })
 
       expect(mergeMock.activeMocks()).toStrictEqual([])
+    })
+
+    test('does not merge into staging if branch is not default', async () => {
+      const payloadClone = JSON.parse(JSON.stringify(pushPayload))
+      payloadClone.repository.default_branch = 'default'
+
+      await probot.receive({ name: 'push', payload: payloadClone })
+
+      expect(mergeMock.activeMocks()).toStrictEqual(['POST https://api.github.com:443/repos/soberstadt/test-merge-repo/merges'])
     })
   })
 
