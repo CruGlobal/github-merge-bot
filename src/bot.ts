@@ -1,4 +1,4 @@
-import { Application, Context } from 'probot'
+import { Application, Context, ApplicationFunction } from 'probot'
 import Webhooks from '@octokit/webhooks'
 
 // const { rollbar } = require('../config/rollbar.js')
@@ -9,7 +9,7 @@ interface Config {
   comment: boolean
 }
 
-export = (app: Application) => {
+export const MergerBot: ApplicationFunction = (app: Application) => {
   const defaultConfig = {
     enabled: false,
     label_name: 'On Staging',
