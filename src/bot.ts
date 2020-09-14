@@ -97,7 +97,9 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
   async function mergePRIntoStaging (context: Context) {
     app.log.debug('attempting to merge PR into staging')
     const { data: prDetails } = await context.github.pulls.get(context.issue())
-    await mergeIntoStaging(context, prDetails.head.ref)
+    await mergeIntoStaging(context, prDetails.head.ref).catch(async error => {
+      await mergeError(error, context)
+    })
   }
 
   async function mergeIntoStaging (context: Context, head: string) {
@@ -105,9 +107,7 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
       base: 'staging',
       head: head
     })
-    await context.github.repos.merge(mergePayload).catch(async error => {
-      await mergeError(error, context)
-    })
+    await context.github.repos.merge(mergePayload)
   }
 
   async function addLabel(context: Context, labelName: string) {
