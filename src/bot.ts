@@ -1,5 +1,4 @@
 import { Application, Context, ApplicationFunction } from 'probot'
-import Webhooks from '@octokit/webhooks'
 
 // const { rollbar } = require('../config/rollbar.js')
 
@@ -27,7 +26,7 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
     app.log.debug(`New label added by a ${senderType}`)
     if (senderType === 'Bot') return
 
-    const labelPayload = context.payload as (Webhooks.WebhookPayloadPullRequest & { label: { name: string } })
+    const labelPayload = context.payload as { label: { name: string } }
     const labelName = labelPayload.label.name
     const config = (await loadConfig(context)) as Config
     app.log.debug(`New label: ${config.label_name}, Looking for ${labelName}`)
@@ -96,7 +95,7 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
 
   async function mergePRIntoStaging (context: Context) {
     app.log.debug('attempting to merge PR into staging')
-    const { data: prDetails } = await context.github.pulls.get(context.issue())
+    const { data: prDetails } = await context.github.pulls.get(context.pullRequest())
     await mergeIntoStaging(context, prDetails.head.ref).catch(async error => {
       await mergeError(error, context)
     })

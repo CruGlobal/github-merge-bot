@@ -1,7 +1,7 @@
 import { MergerBot as myProbotApp } from '../dist/bot.js'
-const nock = require('nock')
-// Requiring our app implementation
-const { Probot } = require('probot')
+import nock from 'nock'
+import { Probot } from 'probot'
+
 // Requiring our fixtures
 const labeledPayload = require('./fixtures/pull_request.labeled')
 const synchronizePayload = require('./fixtures/pull_request.synchronize')
@@ -43,7 +43,7 @@ describe('Staging Merger Bot', () => {
       const configHash = "{ enabled: true, 'label_name': 'On Staging', comment: true }"
       const encodedConfig = Buffer.from(configHash).toString('base64')
       nock('https://api.github.com')
-        .get('/repos/soberstadt/test-merge-repo/contents/.github/merge-bot.yml')
+        .get('/repos/soberstadt/test-merge-repo/contents/.github%2Fmerge-bot.yml')
         .reply(200, { content: encodedConfig })
 
       // allow test to get PR details
@@ -83,7 +83,7 @@ describe('Staging Merger Bot', () => {
       const configHash = "{ enabled: true, 'label_name': 'On Staging', comment: true }"
       const encodedConfig = Buffer.from(configHash).toString('base64')
       nock('https://api.github.com')
-        .get('/repos/soberstadt/test-merge-repo/contents/.github/merge-bot.yml')
+        .get('/repos/soberstadt/test-merge-repo/contents/.github%2Fmerge-bot.yml')
         .reply(200, { content: encodedConfig })
 
       // allow test to get PR details
