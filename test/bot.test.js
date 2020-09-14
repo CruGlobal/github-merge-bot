@@ -1,6 +1,6 @@
+import { MergerBot as myProbotApp } from '../dist/bot.js'
 const nock = require('nock')
 // Requiring our app implementation
-const myProbotApp = require('../src/bot.js')
 const { Probot } = require('probot')
 // Requiring our fixtures
 const labeledPayload = require('./fixtures/pull_request.labeled')
