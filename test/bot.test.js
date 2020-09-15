@@ -5,6 +5,7 @@ const { Probot } = require('probot')
 // Requiring our fixtures
 const labeledPayload = require('./fixtures/pull_request.labeled')
 const synchronizePayload = require('./fixtures/pull_request.synchronize')
+const pushPayload = require('./fixtures/push')
 const issueCreatedBody = {
   body: "I see you added the \"On Staging\" label, I'll get this merged to the staging branch!"
 }
@@ -39,7 +40,7 @@ describe('Staging Merger Bot', () => {
         })
         .reply(200)
 
-      const configHash = "{ enabled: true, 'label-name': 'On Staging', comment: true }"
+      const configHash = "{ enabled: true, 'label_name': 'On Staging', comment: true }"
       const encodedConfig = Buffer.from(configHash).toString('base64')
       nock('https://api.github.com')
         .get('/repos/soberstadt/test-merge-repo/contents/.github/merge-bot.yml')
@@ -79,7 +80,7 @@ describe('Staging Merger Bot', () => {
         .post('/app/installations/2/access_tokens')
         .reply(200, { token: 'test' })
 
-      const configHash = "{ enabled: true, 'label-name': 'On Staging', comment: true }"
+      const configHash = "{ enabled: true, 'label_name': 'On Staging', comment: true }"
       const encodedConfig = Buffer.from(configHash).toString('base64')
       nock('https://api.github.com')
         .get('/repos/soberstadt/test-merge-repo/contents/.github/merge-bot.yml')
@@ -107,6 +108,47 @@ describe('Staging Merger Bot', () => {
       await probot.receive({ name: 'pull_request', payload: synchronizePayload })
 
       expect(mergeMock.activeMocks()).toStrictEqual([])
+    })
+  })
+
+  describe('on branch push', () => {
+    let mergeMock
+
+    beforeEach(() => {
+      nock('https://api.github.com')
+        .post('/app/installations/2/access_tokens')
+        .reply(200, { token: 'test' })
+
+      const configHash = "{ enabled: true, 'label_name': 'On Staging', comment: true, 'watch_default_branch': true }"
+      const encodedConfig = Buffer.from(configHash).toString('base64')
+      nock('https://api.github.com')
+        .get('/repos/soberstadt/test-merge-repo/contents/.github/merge-bot.yml')
+        .reply(200, { content: encodedConfig })
+
+      mergeMock = nock('https://api.github.com')
+        .post('/repos/soberstadt/test-merge-repo/merges', (body) => {
+          expect(body).toMatchObject({
+            base: 'staging',
+            head: 'main'
+          })
+          return true
+        })
+        .reply(200)
+    })
+
+    test('merges branch into staging', async () => {
+      await probot.receive({ name: 'push', payload: pushPayload })
+
+      expect(mergeMock.activeMocks()).toStrictEqual([])
+    })
+
+    test('does not merge into staging if branch is not default', async () => {
+      const payloadClone = JSON.parse(JSON.stringify(pushPayload))
+      payloadClone.repository.default_branch = 'default'
+
+      await probot.receive({ name: 'push', payload: payloadClone })
+
+      expect(mergeMock.activeMocks()).toStrictEqual(['POST https://api.github.com:443/repos/soberstadt/test-merge-repo/merges'])
     })
   })
 
