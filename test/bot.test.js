@@ -122,7 +122,7 @@ describe('Staging Merger Bot', () => {
       const configHash = "{ enabled: true, 'label_name': 'On Staging', comment: true, 'watch_default_branch': true }"
       const encodedConfig = Buffer.from(configHash).toString('base64')
       nock('https://api.github.com')
-        .get('/repos/soberstadt/test-merge-repo/contents/.github/merge-bot.yml')
+        .get('/repos/soberstadt/test-merge-repo/contents/.github%2Fmerge-bot.yml')
         .reply(200, { content: encodedConfig })
 
       mergeMock = nock('https://api.github.com')
