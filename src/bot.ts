@@ -1,4 +1,5 @@
 import { Application, Context, ApplicationFunction } from 'probot'
+import { EventPayloads } from '@octokit/webhooks'
 
 // const { rollbar } = require('../config/rollbar.js')
 
@@ -26,7 +27,7 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
     app.log.debug(`New label added by a ${senderType}`)
     if (senderType === 'Bot') return
 
-    const labelPayload = context.payload as { label: { name: string } }
+    const labelPayload = context.payload as (EventPayloads.WebhookPayloadPullRequest & { label: { name: string } })
     const labelName = labelPayload.label.name
     const config = (await loadConfig(context)) as Config
     app.log.debug(`New label: ${config.label_name}, Looking for ${labelName}`)
