@@ -37,11 +37,11 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
       return
     }
 
-    await mergePRIntoStaging(context)
     if (config.comment) {
       const commentBody = `I see you added the "${config.label_name}" label, I'll get this merged to the staging branch!`
       await addComment(commentBody, context)
     }
+    await mergePRIntoStaging(context)
     app.log.debug('merged and commented')
   })
 
@@ -55,9 +55,9 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
         return
       }
 
+      if (config.comment) { await addComment("I'll get this merged to the staging branch!", context) }
       await mergePRIntoStaging(context)
       await addLabel(context, config.label_name)
-      if (config.comment) { await addComment("I'll get this merged to the staging branch!", context) }
     }
   })
 
