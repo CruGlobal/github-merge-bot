@@ -24,7 +24,7 @@
     "build:watch": "tsc && (tsc -w --preserveWatchOutput & nodemon)"
   },
   "dependencies": {
-    "@probot/serverless-lambda": "github:scolandrea/serverless-lambda#update-probot-v10",
+    "@probot/serverless-lambda": "^0.5.0",
     "probot": "^10.2.0",
     "rollbar": "^2.16.2",
     "source-map-support": "^0.5.19"
