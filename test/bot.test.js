@@ -129,7 +129,7 @@ describe('Staging Merger Bot', () => {
         .post('/repos/soberstadt/test-merge-repo/merges', (body) => {
           expect(body).toMatchObject({
             base: 'staging',
-            head: 'head/main'
+            head: 'heads/main'
           })
           return true
         })
