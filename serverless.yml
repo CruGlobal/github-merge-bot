@@ -1,14 +1,21 @@
 service: github-merge-bot
+frameworkVersion: '3'
+configValidationMode: error
+plugins:
+  - serverless-webpack
+  - serverless-offline
 
 provider:
   name: aws
   stage: ${env:ENVIRONMENT}
-  runtime: nodejs12.x
   region: us-east-1
   vpc:
     securityGroupIds:
-      - ${file(${env:ECS_CONFIG}/bin/vars.yml):us-east-1.webapp_elb_sg}
-    subnetIds: ${file(${env:ECS_CONFIG}/bin/vars.yml):us-east-1.prod_apps_1_all}
+      - sg-888294ed
+    subnetIds:
+      - subnet-f2c2dfda # us-east-1a
+      - subnet-1508db62 # us-east-1b
+      - subnet-3fd94266 # us-east-1c
   stackTags:
     Name: ${env:PROJECT_NAME}-${self:custom.environmentMap.${env:ENVIRONMENT}}
     owner: apps@cru.org
@@ -16,7 +23,32 @@ provider:
     env: ${self:custom.environmentMap.${env:ENVIRONMENT}}
     managed_by: serverless-framework
     function: lambda
-  environment: ${file(serverless/environment.js)}
+  layers:
+    - arn:aws:lambda:us-east-1:072686360478:layer:node-16_14_2:1
+  environment: ${file(env.js)}
+
+package:
+  individually: true
+  patterns:
+    - '!.webpack/**'
+    - '!test/**'
+    - '!**/*.test.js'
+    - '!.deployment/**'
+
+custom:
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+    packager: yarn
+    excludeFiles: '**/*.test.js'
+    excludeRegex: \.ts|test|\.map
+  environmentMap:
+    production: prod
+    staging: stage
+    development: dev
+    lab: lab
+  serverless-offline:
+    httpPort: 4000
 
 functions:
   mergebot:
@@ -27,29 +59,3 @@ functions:
       - http:
           path: /bot
           method: POST
-
-package:
-  individually: true
-  exclude:
-    - .git/**
-    - test/**
-    - '**/*.test.js'
-    - .deployment/**
-
-plugins:
-  - serverless-webpack
-  - serverless-offline
-
-custom:
-  webpack:
-    webpackConfig: ./webpack.config.js
-    includeModules: true
-    packager: yarn
-    excludeFiles: '**/*.test.js'
-  environmentMap:
-    production: prod
-    staging: stage
-    development: dev
-    lab: lab
-  serverless-offline:
-    httpPort: 4000
