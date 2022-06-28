@@ -7,7 +7,8 @@ interface Config {
   enabled: boolean,
   label_name: string,
   comment: boolean,
-  watch_default_branch: boolean
+  watch_default_branch: boolean,
+  base_name: string
 }
 
 export const MergerBot: ApplicationFunction = (app: Application) => {
@@ -15,7 +16,8 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
     enabled: false,
     label_name: 'On Staging',
     comment: true,
-    watch_default_branch: false
+    watch_default_branch: false,
+    base_name: 'staging'
   }
 
   // app.router.use(rollbar.errorHandler())
@@ -38,10 +40,10 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
     }
 
     if (config.comment) {
-      const commentBody = `I see you added the "${config.label_name}" label, I'll get this merged to the staging branch!`
+      const commentBody = `I see you added the "${config.label_name}" label, I'll get this merged to the ${config.base_name} branch!`
       await addComment(commentBody, context)
     }
-    await mergePRIntoStaging(context)
+    await mergePRIntoStaging(context, config)
     app.log.debug('merged and commented')
   })
 
@@ -55,8 +57,8 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
         return
       }
 
-      if (config.comment) { await addComment("I'll get this merged to the staging branch!", context) }
-      await mergePRIntoStaging(context)
+      if (config.comment) { await addComment(`I'll get this merged to the ${config.base_name} branch!`, context) }
+      await mergePRIntoStaging(context, config)
       await addLabel(context, config.label_name)
     }
   })
@@ -65,7 +67,7 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
     const config = (await loadConfig(context)) as Config
     if (!config.enabled) return
     if (await pullRequestHasLabel(context, config.label_name)) {
-      await mergePRIntoStaging(context)
+      await mergePRIntoStaging(context, config)
     }
   })
 
@@ -74,8 +76,8 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
     if (!config.enabled || !config.watch_default_branch) return
     const defaultBranch = context.payload.repository.default_branch
     if (context.payload.ref !== `refs/${defaultBranch}` && context.payload.ref !== `refs/heads/${defaultBranch}`) return
-    app.log.debug(`attempting to merge ${defaultBranch} into staging`)
-    await mergeIntoStaging(context, defaultBranch)
+    app.log.debug(`attempting to merge ${defaultBranch} into ${config.base_name}`)
+    await mergeIntoStaging(context, defaultBranch, config)
   })
 
   async function loadConfig(context: Context) {
@@ -94,17 +96,17 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
     return false
   }
 
-  async function mergePRIntoStaging (context: Context) {
-    app.log.debug('attempting to merge PR into staging')
+  async function mergePRIntoStaging (context: Context, config: Config) {
+    app.log.debug(`attempting to merge PR into ${config.base_name}`)
     const { data: prDetails } = await context.github.pulls.get(context.issue())
-    await mergeIntoStaging(context, prDetails.head.ref).catch(async error => {
-      await mergeError(error, context)
+    await mergeIntoStaging(context, prDetails.head.ref, config).catch(async error => {
+      await mergeError(error, context, config)
     })
   }
 
-  async function mergeIntoStaging (context: Context, head: string) {
+  async function mergeIntoStaging (context: Context, head: string, config: Config) {
     const mergePayload = context.repo({
-      base: 'staging',
+      base: config.base_name,
       head: head
     })
     await context.github.repos.merge(mergePayload)
@@ -128,10 +130,10 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
     return result
   }
 
-  async function mergeError(error: { message: string }, context: Context) {
+  async function mergeError(error: { message: string }, context: Context, config: Config) {
     if (error.message === 'Merge conflict') {
       await addComment(
-        'Merge conflict attempting to merge this into staging. Please fix manually.',
+        `Merge conflict attempting to merge this into ${config.base_name}. Please fix manually.`,
         context
       )
     } else {
