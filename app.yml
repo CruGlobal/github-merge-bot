@@ -124,6 +124,9 @@ default_permissions:
   # https://developer.github.com/v3/apps/permissions/
   # organization_administration: read
 
+  # Allow app to write to the .github/workflows directory
+  workflows: write
+
 
 # The name of the GitHub App. Defaults to the name specified in package.json
 # name: My Probot App
