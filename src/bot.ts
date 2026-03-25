@@ -99,15 +99,18 @@ export const MergerBot: ApplicationFunction = (app: Application) => {
   async function mergePRIntoStaging (context: Context, config: Config) {
     app.log.debug(`attempting to merge PR into ${config.base_name}`)
     const { data: prDetails } = await context.github.pulls.get(context.issue())
-    await mergeIntoStaging(context, prDetails.head.ref, config).catch(async error => {
+    await mergeIntoStaging(context, prDetails.head.ref, config, prDetails.number).catch(async error => {
       await mergeError(error, context, config)
     })
   }
 
-  async function mergeIntoStaging (context: Context, head: string, config: Config) {
+  async function mergeIntoStaging (context: Context, head: string, config: Config, prNumber?: number) {
+    const prInfo = prNumber ? ` (PR #${prNumber})` : '';
+    const commitMessage = `Merge branch '${head}'${prInfo} into ${config.base_name}`
     const mergePayload = context.repo({
       base: config.base_name,
-      head: head
+      head: head,
+      commit_message: commitMessage
     })
     await context.github.repos.merge(mergePayload)
   }
