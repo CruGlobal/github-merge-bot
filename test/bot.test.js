@@ -11,7 +11,8 @@ const issueCreatedBody = {
 }
 const mergeBody = {
   base: 'staging',
-  head: 'asdf1234'
+  head: 'asdf1234',
+  commit_message: "Merge branch 'asdf1234' (PR #2) into staging"
 }
 
 nock.disableNetConnect()
@@ -49,7 +50,7 @@ describe('Staging Merger Bot', () => {
       // allow test to get PR details
       nock('https://api.github.com')
         .get('/repos/soberstadt/test-merge-repo/pulls/2')
-        .reply(200, { head: { ref: 'asdf1234' } })
+        .reply(200, { head: { ref: 'asdf1234' }, number: 2 })
 
       mergeMock = nock('https://api.github.com')
         .post('/repos/soberstadt/test-merge-repo/merges', (body) => {
@@ -89,7 +90,7 @@ describe('Staging Merger Bot', () => {
       // allow test to get PR details
       nock('https://api.github.com')
         .get('/repos/soberstadt/test-merge-repo/pulls/2')
-        .reply(200, { head: { ref: 'asdf1234' } })
+        .reply(200, { head: { ref: 'asdf1234' }, number: 2 })
 
       // allow test to get PR labels
       nock('https://api.github.com')
