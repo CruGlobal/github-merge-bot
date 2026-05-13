@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - master
       - staging
   # Allows manual build and deploy of any branch/ref
   workflow_dispatch:
