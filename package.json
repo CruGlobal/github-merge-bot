@@ -17,6 +17,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@octokit/request-error": "^7.1.0",
     "probot": "^14.3.2"
   },
   "devDependencies": {
