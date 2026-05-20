@@ -89,6 +89,30 @@ describe('Staging Merger Bot', () => {
       await probot.receive({ id: '1', name: 'pull_request', payload: labeledPayload as never })
       expect(scope.pendingMocks()).toEqual([])
     })
+
+    test('posts a conflict comment when merge returns 409', async () => {
+      const commentBodies: string[] = []
+      const captureComment = (body: { body: string }): boolean => {
+        commentBodies.push(body.body)
+        return true
+      }
+      const scope = mockConfig(nock('https://api.github.com'), baseConfigYaml)
+        .get('/repos/soberstadt/test-merge-repo/pulls/2')
+        .reply(200, { head: { ref: 'test2' }, number: 2 })
+        .post('/repos/soberstadt/test-merge-repo/issues/2/comments', captureComment)
+        .reply(200, {})
+        .post('/repos/soberstadt/test-merge-repo/merges')
+        .reply(409, { message: 'Merge conflict' })
+        .post('/repos/soberstadt/test-merge-repo/issues/2/comments', captureComment)
+        .reply(200, {})
+
+      await probot.receive({ id: '5', name: 'pull_request', payload: labeledPayload as never })
+      expect(scope.pendingMocks()).toEqual([])
+      expect(commentBodies).toEqual([
+        issueCreatedBody.body,
+        'Merge conflict attempting to merge this into staging. Please fix manually.',
+      ])
+    })
   })
 
   describe('on pr sync', () => {
