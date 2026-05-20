@@ -1,3 +1,4 @@
+import { RequestError } from '@octokit/request-error'
 import type { ApplicationFunction, Context, Probot } from 'probot'
 
 interface Config {
@@ -99,7 +100,7 @@ export const MergerBot: ApplicationFunction = (app: Probot) => {
     try {
       await mergeIntoStaging(context, prDetails.head.ref, config, prDetails.number)
     } catch (error) {
-      await mergeError(context, config, error as { message: string })
+      await mergeError(context, config, error)
     }
   }
 
@@ -143,18 +144,14 @@ export const MergerBot: ApplicationFunction = (app: Probot) => {
     }
   }
 
-  async function mergeError(
-    context: Context,
-    config: Config,
-    error: { message: string },
-  ): Promise<void> {
-    if (error.message === 'Merge conflict') {
+  async function mergeError(context: Context, config: Config, error: unknown): Promise<void> {
+    if (error instanceof RequestError && error.status === 409) {
       await addComment(
         context,
         `Merge conflict attempting to merge this into ${config.base_name}. Please fix manually.`,
       )
     } else {
-      app.log.error(`issue merging branch: ${error.message}`)
+      app.log.error(`issue merging branch: ${error instanceof Error ? error.message : error}`)
     }
   }
 }
