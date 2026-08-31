@@ -20,15 +20,10 @@ ARG NODE_VERSION=latest
 # Use AWS Lambda Node.js base image for the final image
 FROM public.ecr.aws/lambda/nodejs:${NODE_VERSION}
 
-# Define GitHub Action Build Args
-ARG PROJECT_NAME
-ARG ENVIRONMENT
-ARG BUILD_NUMBER
-
-# Set environment variables for the Lambda function
-ENV PROJECT_NAME=${PROJECT_NAME}
-ENV ENVIRONMENT=${ENVIRONMENT}
-ENV BUILD_NUMBER=${BUILD_NUMBER}
+# Set environment variables for the Lambda function.
+# PROJECT_NAME / ENVIRONMENT are injected as function env vars at runtime by the
+# aws/lambda/app module, so the image stays environment-neutral (build once,
+# promote the same bytes to every environment).
 ENV NODE_OPTIONS=--enable-source-maps
 
 # Set the Lambda task root directory
@@ -45,3 +40,9 @@ CMD ["node_modules/datadog-lambda-js/dist/handler.handler"]
 
 # Copy the built application from the builder stage
 COPY --from=builder /app/dist ./
+
+# Build identity -> Datadog version. Passed by build-candidate as
+# --build-arg VERSION; "dev" for local builds. Last on purpose: nothing else in
+# the build depends on it, so a new build number invalidates no earlier layer.
+ARG VERSION="dev"
+ENV DD_VERSION=${VERSION}
