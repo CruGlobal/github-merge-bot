@@ -12,8 +12,16 @@ RUN npm run build
 
 # Download and extract the secrets-lambda-extension
 FROM public.ecr.aws/docker/library/alpine:latest AS extension
-RUN mkdir -p /opt/secrets-lambda-extension && \
-    wget https://github.com/CruGlobal/secrets-lambda-extension/releases/latest/download/secrets-lambda-extension-linux-amd64.tar.gz -q -O - |tar -xzC /opt/secrets-lambda-extension/
+# Deliberately tracks the LATEST extension release (pinned versions rotted in
+# Dockerfiles fleet-wide; under build-once the artifact itself is the pin and a
+# bad release is caught on the release-candidate surface). Resolve `latest`
+# once, record what was baked, then fetch that exact version.
+RUN apk add --no-cache curl && \
+    mkdir -p /opt/secrets-lambda-extension && \
+    version=$(curl -fsIL -o /dev/null -w '%{url_effective}' https://github.com/CruGlobal/secrets-lambda-extension/releases/latest | sed 's|.*/tag/||') && \
+    echo "secrets-lambda-extension: ${version}" && \
+    echo "${version}" > /opt/secrets-lambda-extension/VERSION && \
+    wget "https://github.com/CruGlobal/secrets-lambda-extension/releases/download/${version}/secrets-lambda-extension-linux-amd64.tar.gz" -q -O - |tar -xzC /opt/secrets-lambda-extension/
 
 # NODE_VERSION set by build.sh based on .tool-versions file
 ARG NODE_VERSION=latest
